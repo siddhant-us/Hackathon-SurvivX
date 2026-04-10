@@ -1,0 +1,1533 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tiki Topple - Juiced Edition</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+      :root {
+        --bg-color-1: #1e1b4b;
+        --bg-color-2: #09090b;
+        --glass-bg: rgba(24, 24, 27, 0.4);
+        --glass-border: rgba(255, 255, 255, 0.08);
+        --text-main: #f8fafc;
+        --text-muted: #a1a1aa;
+        --accent-gradient: linear-gradient(135deg, #f43f5e, #8b5cf6);
+        --accent-glow: rgba(139, 92, 246, 0.5);
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family:
+          "Inter",
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        background: radial-gradient(
+          circle at top center,
+          var(--bg-color-1),
+          var(--bg-color-2)
+        );
+        background-attachment: fixed;
+        color: var(--text-main);
+        min-height: 100vh;
+        overflow-x: hidden;
+        -webkit-font-smoothing: antialiased;
+        animation: bgDrift 20s ease-in-out infinite alternate;
+      }
+
+      @keyframes bgDrift {
+        0% {
+          background-position: 0% 0%;
+        }
+        100% {
+          background-position: 100% 100%;
+        }
+      }
+
+      #root {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+      }
+
+      /* --- SCREEN SHAKE EFFECT --- */
+      @keyframes shake {
+        0% {
+          transform: translate(1px, 1px) rotate(0deg);
+        }
+        10% {
+          transform: translate(-2px, -2px) rotate(-1deg);
+        }
+        20% {
+          transform: translate(-3px, 0px) rotate(1deg);
+        }
+        30% {
+          transform: translate(3px, 2px) rotate(0deg);
+        }
+        40% {
+          transform: translate(1px, -1px) rotate(1deg);
+        }
+        50% {
+          transform: translate(-1px, 2px) rotate(-1deg);
+        }
+        60% {
+          transform: translate(-3px, 1px) rotate(0deg);
+        }
+        70% {
+          transform: translate(3px, 1px) rotate(-1deg);
+        }
+        80% {
+          transform: translate(-1px, -1px) rotate(1deg);
+        }
+        90% {
+          transform: translate(1px, 2px) rotate(0deg);
+        }
+        100% {
+          transform: translate(1px, -2px) rotate(-1deg);
+        }
+      }
+      .shake-active {
+        animation: shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+      }
+
+      .screen {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        width: 100%;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      .title {
+        font-size: clamp(3rem, 6vw, 4.5rem);
+        font-weight: 900;
+        letter-spacing: -0.02em;
+        margin-bottom: 0.5rem;
+        background: var(--accent-gradient);
+        -webkit-background-clip: text;
+        color: transparent;
+        text-shadow: 0 10px 30px var(--accent-glow);
+        text-align: center;
+      }
+
+      .btn {
+        background: var(--glass-bg);
+        color: white;
+        border: 1px solid var(--glass-border);
+        padding: 0.75rem 1.5rem;
+        font-size: 1rem;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        backdrop-filter: blur(10px);
+        font-weight: 600;
+        letter-spacing: 0.5px;
+      }
+
+      .btn:hover:not(:disabled) {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.3);
+        transform: translateY(-4px) scale(1.02);
+      }
+      .btn:active:not(:disabled) {
+        transform: translateY(0) scale(0.98);
+      }
+
+      .btn.primary {
+        background: var(--accent-gradient);
+        border: none;
+        box-shadow: 0 5px 15px var(--accent-glow);
+      }
+      .btn.primary:hover:not(:disabled) {
+        box-shadow: 0 10px 25px rgba(244, 63, 94, 0.6);
+      }
+
+      /* Name Input Fields */
+      .input-field {
+        width: 100%;
+        padding: 1rem;
+        border-radius: 12px;
+        border: 1px solid var(--glass-border);
+        background: rgba(0, 0, 0, 0.3);
+        color: white;
+        font-size: 1.1rem;
+        font-family: inherit;
+        outline: none;
+        transition: all 0.3s ease;
+      }
+      .input-field:focus {
+        border-color: #a78bfa;
+        background: rgba(0, 0, 0, 0.5);
+        box-shadow: 0 0 15px rgba(139, 92, 246, 0.3);
+      }
+
+      .game-container {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+      }
+
+      .game-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        width: 100%;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid var(--glass-border);
+      }
+
+      .player-info {
+        font-size: 1.5rem;
+        font-weight: 700;
+        background: linear-gradient(to right, #fff, #a1a1aa);
+        -webkit-background-clip: text;
+        color: transparent;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .instruction-banner {
+        text-align: center;
+        background: rgba(139, 92, 246, 0.1);
+        border: 1px solid rgba(139, 92, 246, 0.3);
+        padding: 1rem;
+        border-radius: 8px;
+        color: #ddd6fe;
+        font-weight: 500;
+        letter-spacing: 1px;
+        margin-bottom: -1rem;
+        transition: all 0.3s;
+        min-height: 80px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+      }
+      .instruction-banner.bot-turn {
+        background: rgba(239, 68, 68, 0.1);
+        border-color: rgba(239, 68, 68, 0.3);
+        color: #fca5a5;
+        animation: pulseText 1.5s infinite;
+      }
+      @keyframes pulseText {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.6;
+        }
+      }
+
+      /* --- FLOATING ACTION TEXT --- */
+      .floating-text-layer {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 200;
+      }
+      @keyframes floatUpFade {
+        0% {
+          transform: translateY(20px) scale(0.5);
+          opacity: 0;
+        }
+        20% {
+          transform: translateY(-30px) scale(1.2);
+          opacity: 1;
+          text-shadow: 0 0 30px currentColor;
+        }
+        80% {
+          transform: translateY(-60px) scale(1);
+          opacity: 1;
+        }
+        100% {
+          transform: translateY(-80px) scale(0.8);
+          opacity: 0;
+        }
+      }
+      .floating-text {
+        position: absolute;
+        font-size: 4rem;
+        font-weight: 900;
+        letter-spacing: 2px;
+        color: #fff;
+        animation: floatUpFade 1.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)
+          forwards;
+        text-transform: uppercase;
+        filter: drop-shadow(0 10px 10px rgba(0, 0, 0, 0.5));
+      }
+
+      /* --- TRACK & TIKI STYLES --- */
+      .track {
+        background: var(--glass-bg);
+        border-radius: 24px;
+        padding: 3.5rem 2rem;
+        border: 1px solid var(--glass-border);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(20px);
+        position: relative;
+      }
+
+      .positions {
+        display: flex;
+        gap: 1.5rem;
+        width: 100%;
+        justify-content: space-around;
+        position: relative;
+        z-index: 10;
+      }
+
+      .position {
+        width: 80px;
+        height: 120px;
+        border-radius: 12px;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        position: relative;
+      }
+      .position::after {
+        content: "";
+        position: absolute;
+        bottom: -20px;
+        width: 60px;
+        height: 8px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 50%;
+        box-shadow: 0 0 15px rgba(255, 255, 255, 0.05);
+      }
+
+      .tiki {
+        width: 100%;
+        height: 100%;
+        border-radius: 40px 40px 10px 10px;
+        position: relative;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        box-shadow:
+          inset -4px -4px 10px rgba(0, 0, 0, 0.4),
+          inset 4px 4px 10px rgba(255, 255, 255, 0.3),
+          0 10px 15px -3px rgba(0, 0, 0, 0.5);
+      }
+
+      .tiki:hover:not(.disabled) {
+        transform: translateY(-8px) scale(1.05);
+      }
+
+      @keyframes tikiPulseSelected {
+        0% {
+          transform: translateY(-15px) scale(1.1);
+          box-shadow:
+            inset -4px -4px 10px rgba(0, 0, 0, 0.4),
+            inset 4px 4px 10px rgba(255, 255, 255, 0.3),
+            0 0 20px rgba(255, 255, 255, 0.4);
+        }
+        100% {
+          transform: translateY(-18px) scale(1.15);
+          box-shadow:
+            inset -4px -4px 10px rgba(0, 0, 0, 0.4),
+            inset 4px 4px 10px rgba(255, 255, 255, 0.3),
+            0 0 40px rgba(255, 255, 255, 0.9);
+        }
+      }
+      .tiki.selected {
+        animation: tikiPulseSelected 0.7s alternate infinite ease-in-out;
+        border: 2px solid rgba(255, 255, 255, 0.8);
+      }
+
+      @keyframes explodeOut {
+        0% {
+          transform: scale(1);
+          filter: brightness(1);
+          opacity: 1;
+        }
+        40% {
+          transform: scale(1.4) rotate(15deg);
+          filter: brightness(2) drop-shadow(0 0 30px #ef4444);
+          opacity: 0.9;
+        }
+        100% {
+          transform: scale(0) rotate(-45deg);
+          opacity: 0;
+          filter: blur(5px);
+        }
+      }
+      .tiki.toppling {
+        animation: explodeOut 0.6s forwards cubic-bezier(0.25, 1, 0.5, 1);
+        pointer-events: none;
+      }
+
+      .tiki.disabled {
+        cursor: not-allowed;
+      }
+      .tiki.mine::before {
+        content: "⭐";
+        position: absolute;
+        top: -25px;
+        font-size: 14px;
+        filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.8));
+        animation: floatStar 2s ease-in-out infinite;
+      }
+
+      @keyframes floatStar {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-5px);
+        }
+      }
+
+      .tiki-eyes {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 20px;
+      }
+      .eye {
+        width: 10px;
+        height: 6px;
+        background: #fff;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+      }
+      .tiki-mouth {
+        width: 24px;
+        height: 6px;
+        background: rgba(0, 0, 0, 0.6);
+        border-radius: 10px;
+      }
+
+      .cards-section h3 {
+        font-size: 0.9rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin-bottom: 1rem;
+        font-weight: 700;
+      }
+      .cards-panel {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+        gap: 1.25rem;
+      }
+
+      .card {
+        background: linear-gradient(
+          145deg,
+          rgba(39, 39, 42, 0.6),
+          rgba(24, 24, 27, 0.8)
+        );
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 16px;
+        padding: 1.5rem 1rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        color: var(--text-main);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .card:hover:not(:disabled) {
+        transform: translateY(-8px);
+        border-color: rgba(139, 92, 246, 0.5);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+      }
+
+      @keyframes cardGlow {
+        0% {
+          box-shadow:
+            0 0 0 2px #a78bfa,
+            0 10px 30px rgba(139, 92, 246, 0.3);
+        }
+        100% {
+          box-shadow:
+            0 0 0 4px #c084fc,
+            0 15px 40px rgba(192, 132, 252, 0.6),
+            inset 0 0 15px rgba(192, 132, 252, 0.2);
+        }
+      }
+      .card.selected {
+        animation: cardGlow 0.8s alternate infinite ease-in-out;
+        transform: translateY(-12px) scale(1.05);
+        background: linear-gradient(
+          145deg,
+          rgba(76, 29, 149, 0.4),
+          rgba(24, 24, 27, 0.9)
+        );
+        border-color: #c084fc;
+      }
+
+      .card:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+        filter: grayscale(1);
+      }
+      .card-icon {
+        font-size: 2.2rem;
+        margin-bottom: 0.75rem;
+        display: block;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        transition: transform 0.2s;
+      }
+      .card:hover:not(:disabled) .card-icon {
+        transform: scale(1.2);
+      }
+      .card-text {
+        font-weight: 600;
+        font-size: 0.9rem;
+        letter-spacing: 1px;
+        color: #e4e4e7;
+      }
+
+      .player-setup {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        background: var(--glass-bg);
+        backdrop-filter: blur(20px);
+        padding: 4rem;
+        border-radius: 32px;
+        border: 1px solid var(--glass-border);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        width: 100%;
+        max-width: 600px;
+        animation: fadeIn 0.4s ease-out;
+      }
+      .setup-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1rem;
+        width: 100%;
+        margin-bottom: 1.5rem;
+      }
+
+      /* Modals */
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(8px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        animation: fadeIn 0.4s ease-out;
+      }
+      .leaderboard-card {
+        background: var(--glass-bg);
+        border: 1px solid var(--glass-border);
+        border-radius: 24px;
+        padding: 3rem;
+        width: 90%;
+        max-width: 500px;
+        text-align: center;
+        box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
+      }
+      .leaderboard-title {
+        font-size: 2.5rem;
+        font-weight: 800;
+        margin-bottom: 2rem;
+        background: linear-gradient(135deg, #fbbf24, #f59e0b);
+        -webkit-background-clip: text;
+        color: transparent;
+      }
+      .leaderboard-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        padding: 1rem 1.5rem;
+        margin-bottom: 1rem;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        transition: transform 0.2s;
+      }
+      .leaderboard-row:hover {
+        transform: scale(1.05);
+        background: rgba(255, 255, 255, 0.1);
+      }
+      .leaderboard-row.winner {
+        background: rgba(251, 191, 36, 0.1);
+        border-color: rgba(251, 191, 36, 0.3);
+      }
+
+      .rank-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        font-size: 1.2rem;
+        font-weight: 700;
+      }
+      .secret-colors {
+        display: flex;
+        gap: 0.5rem;
+      }
+      .color-dot {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+      }
+      .score-box {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: #fff;
+      }
+
+      @media (max-width: 768px) {
+        .positions {
+          gap: 0.5rem;
+        }
+        .position {
+          width: 45px;
+          height: 80px;
+        }
+        .track {
+          padding: 2rem 0.5rem;
+        }
+        .player-setup {
+          padding: 2rem;
+        }
+        .tiki-eyes {
+          gap: 8px;
+          margin-bottom: 10px;
+        }
+        .eye {
+          width: 6px;
+          height: 4px;
+        }
+        .leaderboard-card {
+          padding: 2rem 1rem;
+        }
+        .floating-text {
+          font-size: 2.5rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+      const { useState, useEffect, useCallback } = React;
+
+      // Audio System
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+      const playSound = (frequency, duration, type = "sine", vol = 0.1) => {
+        try {
+          const oscillator = audioCtx.createOscillator();
+          const gainNode = audioCtx.createGain();
+          oscillator.connect(gainNode);
+          gainNode.connect(audioCtx.destination);
+          oscillator.frequency.value = frequency;
+          oscillator.type = type;
+          gainNode.gain.setValueAtTime(vol, audioCtx.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(
+            0.01,
+            audioCtx.currentTime + duration,
+          );
+          oscillator.start(audioCtx.currentTime);
+          oscillator.stop(audioCtx.currentTime + duration);
+        } catch (e) {}
+      };
+
+      const TIKI_COLORS = [
+        "#ef4444",
+        "#f97316",
+        "#eab308",
+        "#10b981",
+        "#06b6d4",
+        "#3b82f6",
+        "#a855f7",
+        "#ec4899",
+      ];
+
+      const CARD_TYPES = [
+        {
+          id: "advance",
+          name: "Advance",
+          icon: "↑",
+          color: "#10b981",
+          desc: "Move a Tiki UP 1 space.",
+        },
+        {
+          id: "retreat",
+          name: "Retreat",
+          icon: "↓",
+          color: "#f97316",
+          desc: "Move a Tiki DOWN 1 space.",
+        },
+        {
+          id: "swap",
+          name: "Swap",
+          icon: "⇄",
+          color: "#3b82f6",
+          desc: "Swap a Tiki with a neighbor.",
+        },
+        {
+          id: "topple",
+          name: "Topple",
+          icon: "✕",
+          color: "#ef4444",
+          desc: "Permanently destroy a Tiki!",
+        },
+        {
+          id: "block",
+          name: "Block",
+          icon: "⊘",
+          color: "#a855f7",
+          desc: "Freeze an opponent's turn.",
+        },
+      ];
+
+      const TUTORIAL_STEPS = [
+        {
+          title: "🎯 The Goal",
+          desc: "You secretly control 2 Tikis on the board (marked with a ⭐). Your goal is to maneuver them into the top 3 spots to score big points!",
+          icon: "⭐",
+        },
+        {
+          title: "🃏 Action Cards",
+          desc: "Every turn, play a card to alter the board:\n\n↑ Advance: Move a Tiki UP 1 space.\n↓ Retreat: Move a Tiki DOWN 1 space.\n⇄ Swap: Swap a Tiki with a neighbor.\n✕ Topple: Destroy a Tiki entirely!\n⊘ Block: Skip an opponent's turn.",
+          icon: "🃏",
+        },
+        {
+          title: "💥 The Topple",
+          desc: "The Topple card (✕) is deadly. It permanently destroys an opponent's Tiki, removing it from the game entirely. The game ends immediately when only 3 Tikis remain!",
+          icon: "💥",
+        },
+        {
+          title: "🤖 Blocking",
+          desc: "The Block card (⊘) allows you to freeze a random opponent's next turn. Use it strategically to prevent them from toppling your favorites!",
+          icon: "🛡️",
+        },
+      ];
+
+      const Game = () => {
+        const [screen, setScreen] = useState("difficulty");
+        const [difficulty, setDifficulty] = useState(null);
+        const [tutorialStep, setTutorialStep] = useState(0);
+
+        // Player Names setup state
+        const [pendingSetup, setPendingSetup] = useState(null);
+        const [playerNames, setPlayerNames] = useState([]);
+
+        const [gameState, setGameState] = useState(null);
+        const [selectedTiki, setSelectedTiki] = useState(null);
+        const [selectedCard, setSelectedCard] = useState(null);
+
+        const [isShaking, setIsShaking] = useState(false);
+        const [topplingTikiId, setTopplingTikiId] = useState(null);
+        const [floatingTexts, setFloatingTexts] = useState([]);
+
+        const spawnJuiceText = (text, color) => {
+          const id = Date.now() + Math.random();
+          setFloatingTexts((prev) => [...prev, { id, text, color }]);
+          setTimeout(() => {
+            setFloatingTexts((prev) => prev.filter((ft) => ft.id !== id));
+          }, 1500);
+        };
+
+        const resetGame = () => {
+          setGameState(null);
+          setScreen("difficulty");
+          setDifficulty(null);
+          setTutorialStep(0);
+          setPendingSetup(null);
+          setPlayerNames([]);
+        };
+
+        const handleDifficultySelect = (diff) => {
+          setDifficulty(diff);
+          setScreen("start");
+          if (audioCtx.state === "suspended") audioCtx.resume();
+        };
+
+        const initGameFlow = (numPlayers, hasAI = false) => {
+          setPendingSetup({ numPlayers, hasAI });
+
+          // Setup default placeholder names
+          const defaultNames = Array(numPlayers).fill("");
+          if (hasAI) {
+            defaultNames[0] = "Player 1";
+            defaultNames[1] = "🤖 TikiBot";
+          } else {
+            for (let i = 0; i < numPlayers; i++) {
+              defaultNames[i] = `Player ${i + 1}`;
+            }
+          }
+          setPlayerNames(defaultNames);
+          setScreen("playerNames");
+        };
+
+        const setupGameData = () => {
+          const { numPlayers, hasAI } = pendingSetup;
+          const numTikis = 8;
+          const tikisPerPlayer = 2;
+
+          const players = Array.from({ length: numPlayers }, (_, i) => ({
+            id: i,
+            name:
+              playerNames[i].trim() ||
+              (hasAI && i === 1 ? "🤖 TikiBot" : `Player ${i + 1}`),
+            isAI: hasAI && i === 1,
+            tikis: [],
+            score: 0,
+            blocked: 0,
+          }));
+
+          const tikiAssignments = [];
+          for (let i = 0; i < numTikis; i++) {
+            tikiAssignments.push({
+              id: i,
+              color: TIKI_COLORS[i],
+              owner: null,
+              position: 7 - i,
+            });
+          }
+
+          const shuffledTikis = [...tikiAssignments].sort(
+            () => Math.random() - 0.5,
+          );
+          players.forEach((player) => {
+            player.tikis = shuffledTikis
+              .splice(0, tikisPerPlayer)
+              .map((t) => t.id);
+          });
+
+          setGameState({
+            players,
+            tikis: tikiAssignments,
+            originalTikis: [...tikiAssignments],
+            currentPlayer: 0,
+            deck: Array(20)
+              .fill()
+              .flatMap(() => CARD_TYPES.map((c) => c.id)),
+            currentCards: [],
+            gameOver: false,
+            turnCount: 1,
+            numPlayers,
+          });
+
+          setSelectedTiki(null);
+          setSelectedCard(null);
+
+          if (difficulty === "beginner") {
+            setScreen("tutorial");
+          } else {
+            setScreen("game");
+          }
+        };
+
+        const drawCards = useCallback(() => {
+          if (!gameState) return [];
+          const shuffled = [...gameState.deck].sort(() => Math.random() - 0.5);
+          return shuffled
+            .slice(0, 5)
+            .map((id) => CARD_TYPES.find((c) => c.id === id));
+        }, [gameState]);
+
+        useEffect(() => {
+          if (
+            screen === "game" &&
+            gameState &&
+            !gameState.currentCards.length &&
+            !gameState.gameOver
+          ) {
+            setGameState((prev) => ({ ...prev, currentCards: drawCards() }));
+          }
+        }, [screen, gameState, drawCards]);
+
+        useEffect(() => {
+          if (
+            screen === "game" &&
+            gameState &&
+            !gameState.gameOver &&
+            gameState.currentCards.length > 0
+          ) {
+            const currentPlayer = gameState.players[gameState.currentPlayer];
+            if (currentPlayer.isAI) {
+              const aiTimer = setTimeout(() => {
+                executeAITurn();
+              }, 1500);
+              return () => clearTimeout(aiTimer);
+            }
+          }
+        }, [gameState?.currentPlayer, gameState?.currentCards, screen]);
+
+        const executeAITurn = () => {
+          const aiPlayer = gameState.players[gameState.currentPlayer];
+          if (aiPlayer.blocked > 0) {
+            playSound(150, 0.3, "sawtooth");
+            spawnJuiceText("❌ BLOCKED!", "#a1a1aa");
+            setTimeout(() => {
+              setGameState((prev) => ({
+                ...prev,
+                players: prev.players.map((p, i) =>
+                  i === gameState.currentPlayer
+                    ? { ...p, blocked: p.blocked - 1 }
+                    : p,
+                ),
+              }));
+              nextTurn();
+            }, 800);
+            return;
+          }
+
+          const hand = gameState.currentCards;
+          const boardTikis = gameState.tikis;
+          let bestMove = null;
+          let maxScore = -Infinity;
+
+          const evaluateBoard = (simTikis) => {
+            let score = 0;
+            aiPlayer.tikis.forEach((tikiId) => {
+              const index = simTikis.findIndex((t) => t.id === tikiId);
+              if (index === -1) score -= 100;
+              else score += (10 - index) * 5;
+            });
+            return score;
+          };
+
+          hand.forEach((card) => {
+            boardTikis.forEach((targetTiki, targetIdx) => {
+              let simTikis = [...boardTikis];
+              let isValidMove = false;
+              if (card.id === "advance" && targetIdx > 0) {
+                isValidMove = true;
+              } else if (
+                card.id === "retreat" &&
+                targetIdx < simTikis.length - 1
+              ) {
+                isValidMove = true;
+              } else if (
+                card.id === "swap" &&
+                (targetIdx > 0 || targetIdx < simTikis.length - 1)
+              ) {
+                isValidMove = true;
+              } else if (
+                card.id === "topple" &&
+                !aiPlayer.tikis.includes(simTikis[targetIdx].id)
+              ) {
+                simTikis.splice(targetIdx, 1);
+                isValidMove = true;
+              } else if (card.id === "block") {
+                isValidMove = true;
+              }
+
+              if (isValidMove) {
+                let score = evaluateBoard(simTikis);
+                if (card.id === "block") score += 2;
+                score += Math.random() * 2;
+                if (score > maxScore) {
+                  maxScore = score;
+                  bestMove = { cardId: card.id, targetIdx };
+                }
+              }
+            });
+          });
+
+          if (bestMove) triggerActionFlow(bestMove.cardId, bestMove.targetIdx);
+          else triggerActionFlow(hand[0].id, 0);
+        };
+
+        const calculateScores = (finalTikis, currentPlayers) => {
+          return currentPlayers
+            .map((player) => {
+              let roundScore = 0;
+              player.tikis.forEach((tikiId) => {
+                const posIndex = finalTikis.findIndex((t) => t.id === tikiId);
+                if (posIndex === 0) roundScore += 9;
+                else if (posIndex === 1) roundScore += 5;
+                else if (posIndex === 2) roundScore += 2;
+              });
+              return { ...player, score: player.score + roundScore };
+            })
+            .sort((a, b) => b.score - a.score);
+        };
+
+        const triggerActionFlow = (cardId, targetTikiIndex) => {
+          if (!gameState || gameState.gameOver) return;
+
+          const currentPlayer = gameState.players[gameState.currentPlayer];
+          if (currentPlayer.blocked > 0) {
+            playSound(150, 0.3, "sawtooth");
+            spawnJuiceText("❌ BLOCKED!", "#a1a1aa");
+            setTimeout(() => {
+              setGameState((prev) => ({
+                ...prev,
+                players: prev.players.map((p, i) =>
+                  i === gameState.currentPlayer
+                    ? { ...p, blocked: p.blocked - 1 }
+                    : p,
+                ),
+              }));
+              nextTurn();
+            }, 800);
+            return;
+          }
+
+          const cardDef = CARD_TYPES.find((c) => c.id === cardId);
+          let delay = 600;
+
+          if (cardId === "topple") {
+            setTopplingTikiId(gameState.tikis[targetTikiIndex].id);
+            setIsShaking(true);
+            playSound(100, 0.6, "square", 0.3);
+            spawnJuiceText("💥 TOPPLED!", cardDef.color);
+            delay = 600;
+          } else {
+            playSound(659.25, 0.15, "triangle");
+            if (cardId === "swap") spawnJuiceText("🔄 SWAPPED!", cardDef.color);
+            else if (cardId === "advance")
+              spawnJuiceText("🚀 ADVANCED!", cardDef.color);
+            else if (cardId === "retreat")
+              spawnJuiceText("📉 RETREATED!", cardDef.color);
+            else if (cardId === "block")
+              spawnJuiceText("🛡️ BLOCKED!", cardDef.color);
+            delay = 400;
+          }
+
+          setSelectedCard(null);
+          setSelectedTiki(null);
+
+          setTimeout(() => {
+            executeStateChange(cardId, targetTikiIndex);
+            if (cardId === "topple") {
+              setIsShaking(false);
+              setTopplingTikiId(null);
+            }
+          }, delay);
+        };
+
+        const executeStateChange = (cardId, targetTikiIndex) => {
+          setGameState((prev) => {
+            let newTikis = [...prev.tikis];
+            let newPlayers = [...prev.players];
+
+            switch (cardId) {
+              case "advance":
+                if (targetTikiIndex > 0) {
+                  const temp = newTikis[targetTikiIndex - 1];
+                  newTikis[targetTikiIndex - 1] = newTikis[targetTikiIndex];
+                  newTikis[targetTikiIndex] = temp;
+                }
+                break;
+              case "retreat":
+                if (targetTikiIndex < newTikis.length - 1) {
+                  const temp = newTikis[targetTikiIndex + 1];
+                  newTikis[targetTikiIndex + 1] = newTikis[targetTikiIndex];
+                  newTikis[targetTikiIndex] = temp;
+                }
+                break;
+              case "swap":
+                let swapIdx =
+                  targetTikiIndex > 0
+                    ? targetTikiIndex - 1
+                    : targetTikiIndex + 1;
+                if (swapIdx < newTikis.length) {
+                  const temp = newTikis[swapIdx];
+                  newTikis[swapIdx] = newTikis[targetTikiIndex];
+                  newTikis[targetTikiIndex] = temp;
+                }
+                break;
+              case "topple":
+                newTikis.splice(targetTikiIndex, 1);
+                break;
+              case "block":
+                const otherPlayers = newPlayers.filter(
+                  (p) => p.id !== prev.currentPlayer,
+                );
+                const target =
+                  otherPlayers[Math.floor(Math.random() * otherPlayers.length)];
+                target.blocked += 1;
+                break;
+            }
+
+            if (newTikis.length <= 3) {
+              const finalPlayers = calculateScores(newTikis, newPlayers);
+              playSound(800, 0.5, "sine", 0.3);
+              return {
+                ...prev,
+                tikis: newTikis,
+                players: finalPlayers,
+                gameOver: true,
+              };
+            }
+
+            return {
+              ...prev,
+              tikis: newTikis,
+              players: newPlayers,
+              currentPlayer: (prev.currentPlayer + 1) % prev.numPlayers,
+              turnCount: prev.turnCount + 1,
+              currentCards: [],
+            };
+          });
+        };
+
+        const nextTurn = () => {
+          setGameState((prev) => ({
+            ...prev,
+            currentPlayer: (prev.currentPlayer + 1) % prev.numPlayers,
+            turnCount: prev.turnCount + 1,
+            currentCards: [],
+          }));
+          setSelectedCard(null);
+          setSelectedTiki(null);
+        };
+
+        const isAITurn = gameState?.players[gameState?.currentPlayer]?.isAI;
+
+        const handleCardClick = (idx) => {
+          if (isAITurn) return;
+          playSound(1200, 0.1, "sine");
+
+          if (selectedTiki !== null) {
+            const cardId = gameState.currentCards[idx].id;
+            triggerActionFlow(cardId, selectedTiki);
+          } else {
+            setSelectedCard(idx);
+          }
+        };
+
+        const handleTikiClick = (idx) => {
+          if (isAITurn) return;
+          playSound(900, 0.1, "triangle");
+
+          if (selectedCard !== null) {
+            const cardId = gameState.currentCards[selectedCard].id;
+            triggerActionFlow(cardId, idx);
+          } else {
+            setSelectedTiki(idx);
+          }
+        };
+
+        return (
+          <div className={`screen ${isShaking ? "shake-active" : ""}`}>
+            <div className="floating-text-layer">
+              {floatingTexts.map((ft) => (
+                <div
+                  key={ft.id}
+                  className="floating-text"
+                  style={{ color: ft.color }}
+                >
+                  {ft.text}
+                </div>
+              ))}
+            </div>
+
+            {/* SCREEN 1: EXPERIENCE SELECTION */}
+            {screen === "difficulty" && (
+              <div className="player-setup">
+                <h1 className="title">Tiki Topple</h1>
+                <p className="subtitle">Welcome to the Neon Jungle</p>
+                <div
+                  style={{
+                    marginBottom: "2rem",
+                    color: "var(--text-main)",
+                    fontSize: "1.2rem",
+                    fontWeight: "600",
+                    letterSpacing: "1px",
+                  }}
+                >
+                  WHAT IS YOUR EXPERIENCE LEVEL?
+                </div>
+                <div className="setup-grid">
+                  <button
+                    className="btn primary"
+                    onClick={() => handleDifficultySelect("beginner")}
+                  >
+                    Beginner (Show Tutorial) 🔰
+                  </button>
+                  <button
+                    className="btn"
+                    onClick={() => handleDifficultySelect("intermediate")}
+                  >
+                    Intermediate (Skip Tutorial) ⚡
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* SCREEN 2: PLAYER COUNT SELECTION */}
+            {screen === "start" && (
+              <div className="player-setup">
+                <h1 className="title">Tiki Topple</h1>
+                <p className="subtitle">Lobby</p>
+                <div className="setup-grid">
+                  <button
+                    className="btn primary"
+                    onClick={() => initGameFlow(2, true)}
+                  >
+                    1 Player vs Bot 🤖
+                  </button>
+                  <button className="btn" onClick={() => initGameFlow(2)}>
+                    2 Players (Local)
+                  </button>
+                  <button className="btn" onClick={() => initGameFlow(3)}>
+                    3 Players (Local)
+                  </button>
+                  <button className="btn" onClick={() => initGameFlow(4)}>
+                    4 Players (Local)
+                  </button>
+                </div>
+                <button
+                  className="btn"
+                  style={{ marginTop: "2rem", width: "100%" }}
+                  onClick={() => setScreen("difficulty")}
+                >
+                  Back
+                </button>
+              </div>
+            )}
+
+            {/* SCREEN 3: NAME SELECTION */}
+            {screen === "playerNames" && (
+              <div className="player-setup">
+                <h1 className="title" style={{ fontSize: "2.5rem" }}>
+                  Who is playing?
+                </h1>
+                <p className="subtitle" style={{ marginBottom: "1.5rem" }}>
+                  Enter your names
+                </p>
+
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "1rem",
+                    width: "100%",
+                    maxWidth: "350px",
+                  }}
+                >
+                  {playerNames.map((name, idx) => {
+                    // Hide AI name input
+                    if (pendingSetup?.hasAI && idx === 1) return null;
+
+                    return (
+                      <input
+                        key={idx}
+                        type="text"
+                        className="input-field"
+                        placeholder={`Player ${idx + 1}`}
+                        value={name}
+                        onChange={(e) => {
+                          const newNames = [...playerNames];
+                          newNames[idx] = e.target.value;
+                          setPlayerNames(newNames);
+                        }}
+                      />
+                    );
+                  })}
+                </div>
+
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "1rem",
+                    width: "100%",
+                    maxWidth: "350px",
+                    marginTop: "2.5rem",
+                  }}
+                >
+                  <button
+                    className="btn"
+                    style={{ flex: 1 }}
+                    onClick={() => setScreen("start")}
+                  >
+                    Back
+                  </button>
+                  <button
+                    className="btn primary"
+                    style={{ flex: 2 }}
+                    onClick={setupGameData}
+                  >
+                    Continue
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* SCREEN 4: TUTORIAL */}
+            {screen === "tutorial" && (
+              <div className="player-setup" style={{ maxWidth: "650px" }}>
+                <h1
+                  className="title"
+                  style={{ fontSize: "2.5rem", marginBottom: "1rem" }}
+                >
+                  {TUTORIAL_STEPS[tutorialStep].title}
+                </h1>
+                <div
+                  style={{
+                    fontSize: "5rem",
+                    margin: "1rem 0",
+                    animation: "floatStar 2s infinite ease-in-out",
+                  }}
+                >
+                  {TUTORIAL_STEPS[tutorialStep].icon}
+                </div>
+                <p
+                  style={{
+                    fontSize: "1.2rem",
+                    color: "#e4e4e7",
+                    marginBottom: "3rem",
+                    lineHeight: "1.6",
+                    padding: "0 1rem",
+                    whiteSpace: "pre-line",
+                  }}
+                >
+                  {TUTORIAL_STEPS[tutorialStep].desc}
+                </p>
+                <div style={{ display: "flex", gap: "1rem", width: "100%" }}>
+                  {tutorialStep > 0 && (
+                    <button
+                      className="btn"
+                      style={{ flex: 1 }}
+                      onClick={() => setTutorialStep((s) => s - 1)}
+                    >
+                      Back
+                    </button>
+                  )}
+                  {tutorialStep < TUTORIAL_STEPS.length - 1 ? (
+                    <button
+                      className="btn primary"
+                      style={{ flex: 2 }}
+                      onClick={() => setTutorialStep((s) => s + 1)}
+                    >
+                      Next
+                    </button>
+                  ) : (
+                    <button
+                      className="btn primary"
+                      style={{ flex: 2 }}
+                      onClick={() => {
+                        playSound(523.25, 0.2);
+                        setScreen("game");
+                      }}
+                    >
+                      Start Game!
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* SCREEN 5: THE GAME */}
+            {screen === "game" && gameState && (
+              <div className="game-container">
+                <div className="game-header">
+                  <div>
+                    <div className="turn-indicator">
+                      Turn {gameState.turnCount}
+                    </div>
+                    <div className="player-info">
+                      {gameState.players[gameState.currentPlayer].name}'s move
+                    </div>
+                  </div>
+                  <button className="btn" onClick={resetGame}>
+                    Quit
+                  </button>
+                </div>
+
+                {/* THE DYNAMIC IN-GAME HELPER BANNER */}
+                {!gameState.gameOver && (
+                  <div
+                    className={`instruction-banner ${isAITurn ? "bot-turn" : ""}`}
+                  >
+                    {isAITurn ? (
+                      "🤖 TikiBot is thinking..."
+                    ) : selectedCard === null ? (
+                      "1. Select an Action Card from your hand below"
+                    ) : (
+                      <div style={{ lineHeight: "1.4" }}>
+                        <strong
+                          style={{
+                            color: gameState.currentCards[selectedCard].color,
+                            fontSize: "1.2em",
+                          }}
+                        >
+                          {gameState.currentCards[selectedCard].icon}{" "}
+                          {gameState.currentCards[selectedCard].name}:
+                        </strong>{" "}
+                        {gameState.currentCards[selectedCard].desc}
+                        <div
+                          style={{
+                            fontSize: "0.85em",
+                            opacity: 0.8,
+                            marginTop: "4px",
+                          }}
+                        >
+                          👉 Step 2: Now select a target Tiki on the board
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div className="track">
+                  <div className="positions">
+                    {gameState.tikis.map((tiki, idx) => {
+                      const isMine =
+                        !isAITurn &&
+                        gameState.players[
+                          gameState.currentPlayer
+                        ].tikis.includes(tiki.id);
+                      const isToppling = topplingTikiId === tiki.id;
+
+                      return (
+                        <div key={tiki.id} className="position">
+                          <div
+                            className={`tiki ${selectedTiki === idx ? "selected" : ""} ${isMine ? "mine" : ""} ${isAITurn ? "disabled" : ""} ${isToppling ? "toppling" : ""}`}
+                            style={{ background: tiki.color }}
+                            onClick={() => handleTikiClick(idx)}
+                          >
+                            <div className="tiki-eyes">
+                              <div className="eye"></div>
+                              <div className="eye"></div>
+                            </div>
+                            <div className="tiki-mouth"></div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {!gameState.gameOver && gameState.currentCards.length > 0 && (
+                  <div className="cards-section">
+                    <h3>Action Cards</h3>
+                    <div className="cards-panel">
+                      {gameState.currentCards.map((card, idx) => (
+                        <button
+                          key={idx}
+                          disabled={isAITurn}
+                          className={`card ${selectedCard === idx ? "selected" : ""}`}
+                          onClick={() => handleCardClick(idx)}
+                        >
+                          <span className="card-icon">{card.icon}</span>
+                          <span className="card-text">{card.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* GAME OVER LEADERBOARD */}
+            {gameState?.gameOver && (
+              <div className="modal-overlay">
+                <div className="leaderboard-card">
+                  <h2 className="leaderboard-title">Game Over!</h2>
+                  <p
+                    style={{ color: "var(--text-muted)", marginBottom: "2rem" }}
+                  >
+                    Only 3 Tikis survived the topple. Here are the final scores:
+                  </p>
+
+                  <div style={{ marginBottom: "2.5rem" }}>
+                    {gameState.players.map((player, index) => (
+                      <div
+                        key={player.id}
+                        className={`leaderboard-row ${index === 0 ? "winner" : ""}`}
+                      >
+                        <div className="rank-info">
+                          <span
+                            style={{
+                              color: index === 0 ? "#fbbf24" : "inherit",
+                            }}
+                          >
+                            {index === 0 ? "🏆" : `#${index + 1}`}
+                          </span>
+                          <span>{player.name}</span>
+                          <div className="secret-colors">
+                            {player.tikis.map((tikiId) => {
+                              const color = gameState.originalTikis.find(
+                                (t) => t.id === tikiId,
+                              )?.color;
+                              return (
+                                <div
+                                  key={tikiId}
+                                  className="color-dot"
+                                  style={{ background: color }}
+                                ></div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                        <div className="score-box">
+                          {player.score}{" "}
+                          <span
+                            style={{
+                              fontSize: "0.8rem",
+                              color: "var(--text-muted)",
+                            }}
+                          >
+                            pts
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <button
+                    className="btn primary"
+                    style={{
+                      width: "100%",
+                      padding: "1rem",
+                      fontSize: "1.2rem",
+                    }}
+                    onClick={resetGame}
+                  >
+                    Play Again
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      };
+
+      ReactDOM.createRoot(document.getElementById("root")).render(<Game />);
+    </script>
+  </body>
+</html>
