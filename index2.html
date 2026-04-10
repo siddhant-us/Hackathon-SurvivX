@@ -1,0 +1,767 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tiki Topple - Neon Nights</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+      :root {
+        --bg-gradient: radial-gradient(circle at top center, #1e1b4b, #09090b);
+        --glass-bg: rgba(24, 24, 27, 0.4);
+        --glass-border: rgba(255, 255, 255, 0.08);
+        --text-main: #f8fafc;
+        --text-muted: #a1a1aa;
+        --accent-gradient: linear-gradient(135deg, #f43f5e, #8b5cf6);
+        --accent-glow: rgba(139, 92, 246, 0.5);
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family:
+          "Inter",
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          Roboto,
+          Helvetica,
+          Arial,
+          sans-serif;
+        background: var(--bg-gradient);
+        background-attachment: fixed;
+        color: var(--text-main);
+        min-height: 100vh;
+        overflow-x: hidden;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* Animated background subtle glow */
+      body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(
+          circle at 50% 50%,
+          rgba(139, 92, 246, 0.05) 0%,
+          transparent 60%
+        );
+        pointer-events: none;
+        z-index: -1;
+      }
+
+      #root {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .screen {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        width: 100%;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      .title {
+        font-size: clamp(3rem, 6vw, 4.5rem);
+        font-weight: 900;
+        letter-spacing: -0.02em;
+        margin-bottom: 0.5rem;
+        background: var(--accent-gradient);
+        -webkit-background-clip: text;
+        color: transparent;
+        text-shadow: 0 10px 30px var(--accent-glow);
+      }
+
+      .subtitle {
+        color: var(--text-muted);
+        margin-bottom: 3rem;
+        font-size: 1.1rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        font-weight: 600;
+      }
+
+      .btn {
+        background: var(--glass-bg);
+        color: white;
+        border: 1px solid var(--glass-border);
+        padding: 0.75rem 1.5rem;
+        font-size: 1rem;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        backdrop-filter: blur(10px);
+        font-weight: 600;
+        letter-spacing: 0.5px;
+      }
+
+      .btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.3);
+        transform: translateY(-2px);
+      }
+
+      .game-container {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+        animation: fadeIn 0.5s ease-out;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .game-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        width: 100%;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid var(--glass-border);
+      }
+
+      .player-info {
+        font-size: 1.5rem;
+        font-weight: 700;
+        background: linear-gradient(to right, #fff, #a1a1aa);
+        -webkit-background-clip: text;
+        color: transparent;
+      }
+
+      .turn-indicator {
+        color: var(--text-muted);
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin-bottom: 0.25rem;
+      }
+
+      .instruction-banner {
+        text-align: center;
+        background: rgba(139, 92, 246, 0.1);
+        border: 1px solid rgba(139, 92, 246, 0.3);
+        padding: 0.75rem;
+        border-radius: 8px;
+        color: #ddd6fe;
+        font-weight: 500;
+        letter-spacing: 1px;
+        margin-bottom: -1rem;
+      }
+
+      /* Premium Glass Track */
+      .track {
+        background: var(--glass-bg);
+        border-radius: 24px;
+        padding: 3.5rem 2rem;
+        border: 1px solid var(--glass-border);
+        box-shadow:
+          0 25px 50px -12px rgba(0, 0, 0, 0.5),
+          inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        position: relative;
+      }
+
+      .positions {
+        display: flex;
+        gap: 1.5rem;
+        width: 100%;
+        justify-content: space-around;
+        position: relative;
+        z-index: 10;
+      }
+
+      .position {
+        width: 80px;
+        height: 120px;
+        border-radius: 12px;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        position: relative;
+      }
+
+      /* Sleek Pedestal bases */
+      .position::after {
+        content: "";
+        position: absolute;
+        bottom: -20px;
+        width: 60px;
+        height: 8px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 50%;
+        box-shadow: 0 0 15px rgba(255, 255, 255, 0.05);
+      }
+
+      /* Totem-style Tikis */
+      .tiki {
+        width: 100%;
+        height: 100%;
+        border-radius: 40px 40px 10px 10px; /* Totem shape */
+        position: relative;
+        cursor: pointer;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        box-shadow:
+          inset -4px -4px 10px rgba(0, 0, 0, 0.4),
+          inset 4px 4px 10px rgba(255, 255, 255, 0.3),
+          0 10px 15px -3px rgba(0, 0, 0, 0.5);
+      }
+
+      .tiki:hover {
+        transform: translateY(-10px) scale(1.05);
+      }
+
+      .tiki.selected {
+        transform: translateY(-15px) scale(1.1);
+        box-shadow:
+          inset -4px -4px 10px rgba(0, 0, 0, 0.4),
+          inset 4px 4px 10px rgba(255, 255, 255, 0.3),
+          0 0 30px rgba(255, 255, 255, 0.4);
+      }
+
+      .tiki.mine::before {
+        content: "⭐";
+        position: absolute;
+        top: -25px;
+        font-size: 14px;
+        filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.8));
+        animation: float 2s ease-in-out infinite;
+      }
+
+      @keyframes float {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-5px);
+        }
+      }
+
+      /* Glowing Faces */
+      .tiki-eyes {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 20px;
+      }
+
+      .eye {
+        width: 10px;
+        height: 6px;
+        background: #fff;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+      }
+
+      .tiki-mouth {
+        width: 24px;
+        height: 6px;
+        background: rgba(0, 0, 0, 0.6);
+        border-radius: 10px;
+      }
+
+      /* Glassmorphic Cards */
+      .cards-section h3 {
+        font-size: 0.9rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin-bottom: 1rem;
+        font-weight: 700;
+      }
+
+      .cards-panel {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+        gap: 1.25rem;
+      }
+
+      .card {
+        background: linear-gradient(
+          145deg,
+          rgba(39, 39, 42, 0.6),
+          rgba(24, 24, 27, 0.8)
+        );
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 16px;
+        padding: 1.5rem 1rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        color: var(--text-main);
+        backdrop-filter: blur(10px);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(255, 255, 255, 0.2),
+          transparent
+        );
+      }
+
+      .card:hover:not(:disabled) {
+        transform: translateY(-8px);
+        border-color: rgba(139, 92, 246, 0.5);
+        box-shadow:
+          0 10px 20px rgba(0, 0, 0, 0.3),
+          0 0 20px rgba(139, 92, 246, 0.15);
+      }
+
+      .card.selected {
+        border-color: #a78bfa;
+        background: linear-gradient(
+          145deg,
+          rgba(76, 29, 149, 0.3),
+          rgba(24, 24, 27, 0.9)
+        );
+        box-shadow:
+          0 0 0 2px #a78bfa,
+          0 10px 30px rgba(139, 92, 246, 0.3);
+        transform: translateY(-8px);
+      }
+
+      .card:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+        filter: grayscale(1);
+      }
+
+      .card-icon {
+        font-size: 2.2rem;
+        margin-bottom: 0.75rem;
+        display: block;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+      }
+
+      .card-text {
+        font-weight: 600;
+        font-size: 0.9rem;
+        letter-spacing: 1px;
+        color: #e4e4e7;
+      }
+
+      .player-setup {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        background: var(--glass-bg);
+        backdrop-filter: blur(20px);
+        padding: 4rem;
+        border-radius: 32px;
+        border: 1px solid var(--glass-border);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      }
+
+      .player-count {
+        display: flex;
+        gap: 1.5rem;
+        justify-content: center;
+      }
+
+      .count-btn {
+        width: 60px;
+        height: 60px;
+        border-radius: 16px;
+        font-size: 1.5rem;
+        font-weight: 700;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: var(--text-main);
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .count-btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+        transform: translateY(-5px);
+      }
+
+      @media (max-width: 768px) {
+        .positions {
+          gap: 0.5rem;
+        }
+        .position {
+          width: 45px;
+          height: 80px;
+        }
+        .track {
+          padding: 2rem 0.5rem;
+        }
+        .player-setup {
+          padding: 2rem;
+        }
+        .tiki-eyes {
+          gap: 8px;
+          margin-bottom: 10px;
+        }
+        .eye {
+          width: 6px;
+          height: 4px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+      const { useState, useEffect, useCallback, useRef } = React;
+
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+      const playSound = (frequency, duration, type = "sine") => {
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        oscillator.frequency.value = frequency;
+        oscillator.type = type;
+
+        gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(
+          0.01,
+          audioCtx.currentTime + duration,
+        );
+
+        oscillator.start(audioCtx.currentTime);
+        oscillator.stop(audioCtx.currentTime + duration);
+      };
+
+      // Vibrant Neon Colors
+      const TIKI_COLORS = [
+        "#ef4444", // Bright Red
+        "#f97316", // Neon Orange
+        "#eab308", // Sun Yellow
+        "#10b981", // Emerald
+        "#06b6d4", // Cyan
+        "#3b82f6", // Royal Blue
+        "#a855f7", // Neon Purple
+        "#ec4899", // Hot Pink
+      ];
+
+      const CARD_TYPES = [
+        { id: "advance", name: "Advance", icon: "↑" },
+        { id: "retreat", name: "Retreat", icon: "↓" },
+        { id: "swap", name: "Swap", icon: "⇄" },
+        { id: "topple", name: "Topple", icon: "✕" },
+        { id: "block", name: "Block", icon: "⊘" },
+      ];
+
+      const Game = () => {
+        const [screen, setScreen] = useState("start");
+        const [gameState, setGameState] = useState(null);
+        const [selectedTiki, setSelectedTiki] = useState(null);
+        const [selectedCard, setSelectedCard] = useState(null);
+
+        const initGame = (numPlayers) => {
+          const numTikis = 8;
+          const tikisPerPlayer = 2;
+
+          const players = Array.from({ length: numPlayers }, (_, i) => ({
+            id: i,
+            name: `Player ${i + 1}`,
+            tikis: [],
+            score: 0,
+            blocked: 0,
+          }));
+
+          const tikiAssignments = [];
+          for (let i = 0; i < numTikis; i++) {
+            tikiAssignments.push({
+              id: i,
+              color: TIKI_COLORS[i],
+              owner: Math.floor(Math.random() * numPlayers),
+              position: 7 - i,
+            });
+          }
+
+          const shuffledTikis = [...tikiAssignments].sort(
+            () => Math.random() - 0.5,
+          );
+          players.forEach((player) => {
+            player.tikis = shuffledTikis
+              .splice(0, tikisPerPlayer)
+              .map((t) => t.id);
+          });
+
+          setGameState({
+            players,
+            tikis: tikiAssignments,
+            currentPlayer: 0,
+            deck: Array(20)
+              .fill()
+              .flatMap(() => CARD_TYPES.map((c) => c.id)),
+            currentCards: [],
+            gameOver: false,
+            turnCount: 1,
+            numPlayers,
+          });
+
+          playSound(523.25, 0.2);
+          setScreen("game");
+          setSelectedTiki(null);
+          setSelectedCard(null);
+        };
+
+        const drawCards = useCallback(() => {
+          if (!gameState) return [];
+          const shuffled = [...gameState.deck].sort(() => Math.random() - 0.5);
+          return shuffled
+            .slice(0, 5)
+            .map((id) => CARD_TYPES.find((c) => c.id === id));
+        }, [gameState]);
+
+        useEffect(() => {
+          if (
+            screen === "game" &&
+            gameState &&
+            !gameState.currentCards.length
+          ) {
+            setGameState((prev) => ({ ...prev, currentCards: drawCards() }));
+          }
+        }, [screen, gameState, drawCards]);
+
+        const playCard = (cardId, targetTikiIndex) => {
+          if (!gameState || gameState.gameOver) return;
+
+          const currentPlayer = gameState.players[gameState.currentPlayer];
+          if (currentPlayer.blocked > 0) {
+            setGameState((prev) => ({
+              ...prev,
+              players: prev.players.map((p, i) =>
+                i === gameState.currentPlayer
+                  ? { ...p, blocked: p.blocked - 1 }
+                  : p,
+              ),
+            }));
+            nextTurn();
+            return;
+          }
+
+          performAction({
+            card: cardId,
+            tikiIndex: targetTikiIndex,
+            player: gameState.currentPlayer,
+            turn: gameState.turnCount,
+          });
+        };
+
+        const performAction = (action) => {
+          playSound(659.25, 0.1);
+          setGameState((prev) => {
+            let newTikis = [...prev.tikis];
+            let newPlayers = [...prev.players];
+            const targetTiki = newTikis[action.tikiIndex];
+
+            switch (action.card) {
+              case "advance":
+                newTikis[action.tikiIndex].position = Math.max(
+                  0,
+                  targetTiki.position - 1,
+                );
+                playSound(523.25, 0.2);
+                break;
+              case "retreat":
+                newTikis[action.tikiIndex].position = Math.min(
+                  7,
+                  targetTiki.position + 1,
+                );
+                playSound(392, 0.2);
+                break;
+              case "swap":
+                if (
+                  selectedTiki !== null &&
+                  selectedTiki !== action.tikiIndex
+                ) {
+                  [newTikis[selectedTiki], newTikis[action.tikiIndex]] = [
+                    newTikis[action.tikiIndex],
+                    newTikis[selectedTiki],
+                  ];
+                }
+                playSound(587.33, 0.2);
+                break;
+              case "topple":
+                newTikis.splice(action.tikiIndex, 1);
+                newPlayers[gameState.currentPlayer].score += 1;
+                playSound(659.25, 0.3);
+                break;
+              case "block":
+                const targetOwner = newTikis[action.tikiIndex].owner;
+                newPlayers[targetOwner].blocked += 2;
+                playSound(261.63, 0.3);
+                break;
+            }
+            return { ...prev, tikis: newTikis, players: newPlayers };
+          });
+          nextTurn();
+        };
+
+        const nextTurn = () => {
+          setGameState((prev) => ({
+            ...prev,
+            currentPlayer: (prev.currentPlayer + 1) % prev.numPlayers,
+            turnCount: prev.turnCount + 1,
+            currentCards: [],
+          }));
+          setSelectedCard(null);
+          setSelectedTiki(null);
+        };
+
+        return (
+          <div className="screen">
+            {screen === "start" && (
+              <div className="player-setup">
+                <h1 className="title">Tiki Topple</h1>
+                <p className="subtitle">A Strategic Battle for Supremacy</p>
+                <div
+                  style={{
+                    marginBottom: "1.5rem",
+                    color: "var(--text-muted)",
+                    fontSize: "0.9rem",
+                    letterSpacing: "1px",
+                  }}
+                >
+                  SELECT PLAYERS
+                </div>
+                <div className="player-count">
+                  {[2, 3, 4].map((num) => (
+                    <button
+                      key={num}
+                      className="count-btn"
+                      onClick={() => initGame(num)}
+                    >
+                      {num}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {screen === "game" && gameState && (
+              <div className="game-container">
+                <div className="game-header">
+                  <div>
+                    <div className="turn-indicator">
+                      Turn {gameState.turnCount}
+                    </div>
+                    <div className="player-info">
+                      {gameState.players[gameState.currentPlayer].name}'s move
+                    </div>
+                  </div>
+                  <button className="btn" onClick={() => setScreen("start")}>
+                    End Game
+                  </button>
+                </div>
+
+                <div className="instruction-banner">
+                  {selectedCard === null
+                    ? "1. Select an Action Card from your hand"
+                    : "2. Select a Tiki to target"}
+                </div>
+
+                <div className="track">
+                  <div className="positions">
+                    {gameState.tikis.map((tiki, idx) => {
+                      const isMine = gameState.players[
+                        gameState.currentPlayer
+                      ].tikis.includes(tiki.id);
+                      return (
+                        <div key={tiki.id} className="position">
+                          <div
+                            className={`tiki ${selectedTiki === idx ? "selected" : ""} ${isMine ? "mine" : ""}`}
+                            style={{ background: tiki.color }}
+                            onClick={() => setSelectedTiki(idx)}
+                          >
+                            <div className="tiki-eyes">
+                              <div className="eye"></div>
+                              <div className="eye"></div>
+                            </div>
+                            <div className="tiki-mouth"></div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {gameState.currentCards.length > 0 && (
+                  <div className="cards-section">
+                    <h3>Action Cards</h3>
+                    <div className="cards-panel">
+                      {gameState.currentCards.map((card, idx) => (
+                        <button
+                          key={idx}
+                          className={`card ${selectedCard === idx ? "selected" : ""}`}
+                          onClick={() => {
+                            if (selectedTiki !== null) {
+                              playCard(card.id, selectedTiki);
+                              setSelectedCard(null);
+                            } else {
+                              setSelectedCard(idx);
+                            }
+                          }}
+                        >
+                          <span className="card-icon">{card.icon}</span>
+                          <span className="card-text">{card.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      };
+
+      ReactDOM.createRoot(document.getElementById("root")).render(<Game />);
+    </script>
+  </body>
+</html>
